@@ -1,3 +1,12 @@
+/**
+	CPeripheral
+	CorsairWrapper.cpp
+	Purpose: Wrapping Corsair ICUE SDKs for my program.
+
+	@author Gooday2die(Isu Kim)
+	@version 0.1 19/19/12
+*/
+
 #include <iostream>
 #include <Windows.h>
 #include <CUESDK.h>
@@ -7,6 +16,10 @@
 
 class Corsair {
 public:
+
+	/**
+	A structure for saving the index of connected devices
+	*/
 	struct Device_ID_Index_Info {
 		int keyboard;
 		int mouse;
@@ -25,11 +38,14 @@ public:
 	Device_ID_Index_Info device_id_index;
 
 
+	/**
+	A constructor member function for Corsair class.
+	
+	@param void
+	@return void
+	*/
+
 	Corsair() {
-		/*
-		A constructor method for Corsair class.
-		Currently does not need any parameters for this method.
-		*/
 		init();
 		device_counts = CorsairGetDeviceCount();
 		get_device_info();
@@ -40,20 +56,39 @@ public:
 		else {
 			std::cout << "[CPeripheral] Succesfully initalized Corsair ICUE." << std::endl;
 		}
-
 		set_device_id_index();
-
 	}
+
+	/**
+	A function for setting debug mode on
+	
+	@param void
+	@return void
+	*/
 
 	void debug_on(void) {
 		debug = true;
 		return;
 	}
 
+	/**
+	A function for setting debug mode off
+
+	@param void
+	@return void
+	*/
+
 	void debug_off(void) {
 		debug = false;
 		return;
 	}
+
+	/**
+	A function for printing out list of connected devices.
+
+	@param void
+	@return void
+	*/
 
 	void print_device_info(void) {
 		/* A method for printing connected Corsair devices.*/
@@ -64,13 +99,15 @@ public:
 		return;
 	}
 
+	/**
+	A function for getting device information
+
+	@param void
+	@return CorsairDeviceInfo**
+	*/
+
 	CorsairDeviceInfo** get_device_info(void) {
-		/*
-		A Method for getting Corsair Device Info.
-		Saves that information to corsair_device_info_array.
-		Returns corsair_device_info_array
-		*/
-		static bool this_function_is_already_called = false;  // For checking if this method is called before
+		static bool this_function_is_already_called = false; // For checking if this function was called before. 
 
 		if (!this_function_is_already_called) {  // If method is not called before, do a init process.
 			device_info_array = NULL;
@@ -99,16 +136,26 @@ public:
 		return device_info_array;
 	}
 
+	/**
+	A function for getting a device id of a specific connected device type
+	
+	@param CorsairDeviceType
+	@return int
+	*/
+
 	int get_device_id_index(CorsairDeviceType requested) {
-		\
-			/*
-			A method for retriving a device index.
-			*/
 			for (int i = 0; i < device_counts; i++) {
 				if (requested == device_info_array[i]->type) return i;
 			}
 		return 100; // This case means that the device does not exist.
 	}
+
+	/**
+	A function for filling up all the device indexes.
+
+	@param void
+	@return void
+	*/
 
 	void set_device_id_index(void) {
 		/* Sets all the id indexs. */
@@ -124,19 +171,33 @@ public:
 		return;
 	}
 
+	/**
+	A function for initializing Corsair ICUE SDK. Does ProtocolHandshake and Request Control
+	
+	@param void
+	@return void
+	*/
+
 	void init(void) {
-		/* For initing all the things that should be done before using CUESDK.
-		Handshake + requesting control.*/
 		CorsairPerformProtocolHandshake();
 		CorsairRequestControl(CAM_ExclusiveLightingControl);
 		return;
 	}
 
-	void set_device_color(CorsairDeviceType device_type, unsigned char r, unsigned char g, unsigned char b, CorsairLedId key_id) {
-		/*
-		For setting a specific device type led into color r, g, b
-		*/
+	/**
+	A function for setting device to a specific color
 
+	@param {CorsairDeviceType} device_type the type of LED device. Check {enum} CorsairDeviceType 
+		   located at Corsair official document page 33.
+	@param {unsigned char} r value of Red for the LED device
+	@param {unsigned char} g value of Green for the LED device
+	@param {unsigned char} b value of Blue for the LED devie
+	@param {CorsairLedId} key_id the LED id for the LED to be set. check {enum} CorsairLedId 
+		   located at Corsair official document page 31.
+	@return void
+	*/
+
+	void set_device_color(CorsairDeviceType device_type, unsigned char r, unsigned char g, unsigned char b, CorsairLedId key_id) {
 		CorsairLedColor corsair_led_color;
 		bool result;
 		char device_id = get_device_id_index(device_type);
@@ -156,6 +217,15 @@ public:
 		return;
 	}
 
+	/**
+	A function for setting all Corsair device into a specific color.
+
+	@param {unsigned char} r value of Red for the LED device
+	@param {unsigned char} g value of Green for the LED device
+	@param {unsigned char} b value of Blue for the LED devie
+	@return void
+	*/
+
 	void set_all_color(unsigned char r, unsigned char g, unsigned char b) {
 		CorsairLedColor corsair_led_color;
 		corsair_led_color.r = r;
@@ -171,11 +241,17 @@ public:
 		return;
 	}
 
+	/**
+	A function for releasing Corsair ICUE SDK control back.
+
+	@param void
+	@return void	
+	*/
+
 	void stop(void) {
 		/* A Method for releasing CUE SDK controls. */
 		CorsairReleaseControl(CAM_ExclusiveLightingControl);
 		return;
 	}
-
 };
 
