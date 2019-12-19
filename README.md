@@ -40,3 +40,9 @@ Since all the devices are from different manufacturers, they use all different p
 
  - Screen reactive lighting
 - Key reactive lighthing
+
+![enter image description here](https://github.com/gooday2die/PyPheperial/blob/master/Pics/video_0%20%281%29.gif?raw=true)
+**<Image showing all the device's LED colors are synced.>**
+
+![enter image description here](https://github.com/gooday2die/PyPheperial/blob/master/Pics/video_1%20%281%29.gif?raw=true)
+**Image showing two different SDKs are being synced.** 
