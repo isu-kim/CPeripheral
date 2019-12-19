@@ -1,3 +1,12 @@
+/**
+	CPeripheral
+	RazerWrapper.cpp
+	Purpose: A wrapper of Razer Chroma SDK for my CPeripheral.
+
+	@author Gooday2die(Isu Kim)
+	@version 0.1 19/19/12
+*/
+
 #include <iostream>
 #include <tchar.h>
 #include <assert.h>
@@ -60,43 +69,60 @@ public:
 	QUERYDEVICE QueryDevice = nullptr;
 	HMODULE m_ChromaSDKModule = NULL;
 
-	Razer(int amount, int wait ) {
-		/*
-		Two parameters are for how many requests should be send to razer sdk.
-		Since the sdk does not seem to register all the commands right after they receive it,
-		it is quite essential for multiple tries to occur.
+	/**
+	A constructor member function for Razer class.
 
-		Thus, amout means that how many requests should be sent.
-		wait means the delay time between requests.
-		*/
+	@param {int} amount how many requests should be sent for a command. Razer Chroma SDK seems not
+		    to register command at once. Thus it is necessary to try multiple times. 
+	@param {int} wait how much milisecond should be waited between requests.
+	@return void
+	*/
+
+	Razer(int amount, int wait ) {
 		request_amount = amount;
 		request_wait = wait;
 
 		bool init_result;
 		init_result = initalize();
 
-
 		if (!init_result) {
 		std::cout << "[CPeripheral] Failed to initialize Razer Chroma SDK" << std::endl;
 		exit(0);
 		}
-
 		std::cout << "[CPeripheral] Successfully initialized Razer Chroma SDK" << std::endl;
-
 		CreateMouseEffect(ChromaSDK::Mouse::CHROMA_NONE, nullptr, nullptr);
-
-
 	}
+
+	/**
+	A function for setting Razer debug on
+
+	@param void
+	@return void
+	*/
 
 	void debug_on(void) {
 		debug = true;
 		return;
 	}
 
+	/**
+	A function for setting Razer debug off
+
+	@param void
+	@return void
+	*/
+
 	void debug_off(void) {
 		debug = false;
 		return;
 	}
+
+	/**
+	A function for initializing Razer SDK. Loads DLL and saves function address for future use.
+
+	@param void
+	@return bool 
+	*/
 
 	bool initalize(void){
 		const bool already_called = false;
@@ -158,6 +184,16 @@ public:
 		}
 	}
 
+	/**
+	A function for setting mouse color to specific color
+
+	@param {unsigned char} r value of Red for the LED device
+	@param {unsigned char} g value of Green for the LED device
+	@param {unsigned char} b value of Blue for the LED devie
+	@param {ChromaSDK::Mouse::RZLED} led_posit Mouse LED position.
+	@return void
+	*/
+
 	void set_mouse_color(unsigned char r, unsigned char g, unsigned char b, ChromaSDK::Mouse::RZLED led_posit){
 		ChromaSDK::Mouse::STATIC_EFFECT_TYPE StaticEffect = {};
 		RZEFFECTID effect_id;
@@ -182,6 +218,15 @@ public:
 		return;
 	}
 
+	/**
+	A function for setting keyboard color to specific color
+
+	@param {unsigned char} r value of Red for the LED device
+	@param {unsigned char} g value of Green for the LED device
+	@param {unsigned char} b value of Blue for the LED devie
+	@return void
+	*/
+
 	void set_keyboard_color(unsigned char r, unsigned char g, unsigned char b) {
 		ChromaSDK::Keyboard::STATIC_EFFECT_TYPE StaticEffect = {};
 		RZEFFECTID effect_id;
@@ -204,6 +249,15 @@ public:
 
 		return;
 	}
+
+	/**
+	A function for setting headset color to specific color
+
+	@param {unsigned char} r value of Red for the LED device
+	@param {unsigned char} g value of Green for the LED device
+	@param {unsigned char} b value of Blue for the LED devie
+	@return void
+	*/
 
 	void set_headset_color(unsigned char r, unsigned char g, unsigned char b) {
 		ChromaSDK::Headset::STATIC_EFFECT_TYPE StaticEffect = {};
@@ -228,6 +282,15 @@ public:
 		return;
 	}
 
+	/**
+	A function for setting mousepad color to specific color
+
+	@param {unsigned char} r value of Red for the LED device
+	@param {unsigned char} g value of Green for the LED device
+	@param {unsigned char} b value of Blue for the LED devie
+	@return void
+*/
+
 	void set_mousepad_color(unsigned char r, unsigned char g, unsigned char b) {
 		ChromaSDK::Mousepad::STATIC_EFFECT_TYPE StaticEffect = {};
 		RZEFFECTID effect_id;
@@ -250,6 +313,15 @@ public:
 
 		return;
 	}
+
+	/**
+	A function for setting keypad color to specific color
+
+	@param {unsigned char} r value of Red for the LED device
+	@param {unsigned char} g value of Green for the LED device
+	@param {unsigned char} b value of Blue for the LED devie
+	@return void
+	*/
 
 	void set_keypad_color(unsigned char r, unsigned char g, unsigned char b) {
 		ChromaSDK::Keypad::STATIC_EFFECT_TYPE StaticEffect = {};
@@ -274,6 +346,15 @@ public:
 		return;
 	}
 
+	/**
+	A function for setting all Razer device color to specific color
+
+	@param {unsigned char} r value of Red for the LED device
+	@param {unsigned char} g value of Green for the LED device
+	@param {unsigned char} b value of Blue for the LED devie
+	@return void
+*/
+
 	void set_all_color(unsigned char r, unsigned char g, unsigned char b) {
 		if (debug) std::cout << "[CPeripheral] Set color " << (int)r << ", " << (int)g << ", " << (int)b << " to All Razer Devices." << std::endl;
 
@@ -291,5 +372,3 @@ public:
 		return;
 	}
 };
-
-
