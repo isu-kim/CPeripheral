@@ -1,0 +1,295 @@
+#include <iostream>
+#include <tchar.h>
+#include <assert.h>
+#include <wtypes.h>
+
+#include "RzChromaSDKDefines.h"
+#include "RzChromaSDKTypes.h"
+#include "RzErrors.h"
+
+#ifdef _WIN64
+#define CHROMASDKDLL        _T("RzChromaSDK64.dll")
+#else
+#define CHROMASDKDLL        _T("RzChromaSDK.dll")
+#endif
+
+
+class Razer {
+public:
+	bool debug = false;
+
+	int request_amount;
+	int request_wait;
+
+	const COLORREF BLACK = RGB(0, 0, 0);
+	const COLORREF WHITE = RGB(255, 255, 255);
+	const COLORREF RED = RGB(255, 0, 0);
+	const COLORREF GREEN = RGB(0, 255, 0);
+	const COLORREF BLUE = RGB(0, 0, 255);
+	const COLORREF YELLOW = RGB(255, 255, 0);
+	const COLORREF PURPLE = RGB(128, 0, 128);
+	const COLORREF CYAN = RGB(00, 255, 255);
+	const COLORREF ORANGE = RGB(255, 165, 00);
+	const COLORREF PINK = RGB(255, 192, 203);
+	const COLORREF GREY = RGB(125, 125, 125);
+
+	typedef RZRESULT(*INIT)(void);
+	typedef RZRESULT(*UNINIT)(void);
+	typedef RZRESULT(*CREATEEFFECT)(RZDEVICEID DeviceId, ChromaSDK::EFFECT_TYPE Effect, PRZPARAM pParam, RZEFFECTID* pEffectId);
+	typedef RZRESULT(*CREATEKEYBOARDEFFECT)(ChromaSDK::Keyboard::EFFECT_TYPE Effect, PRZPARAM pParam, RZEFFECTID* pEffectId);
+	typedef RZRESULT(*CREATEHEADSETEFFECT)(ChromaSDK::Headset::EFFECT_TYPE Effect, PRZPARAM pParam, RZEFFECTID* pEffectId);
+	typedef RZRESULT(*CREATEMOUSEPADEFFECT)(ChromaSDK::Mousepad::EFFECT_TYPE Effect, PRZPARAM pParam, RZEFFECTID* pEffectId);
+	typedef RZRESULT(*CREATEMOUSEEFFECT)(ChromaSDK::Mouse::EFFECT_TYPE Effect, PRZPARAM pParam, RZEFFECTID* pEffectId);
+	typedef RZRESULT(*CREATEKEYPADEFFECT)(ChromaSDK::Keypad::EFFECT_TYPE Effect, PRZPARAM pParam, RZEFFECTID* pEffectId);
+	typedef RZRESULT(*SETEFFECT)(RZEFFECTID EffectId);
+	typedef RZRESULT(*DELETEEFFECT)(RZEFFECTID EffectId);
+	typedef RZRESULT(*REGISTEREVENTNOTIFICATION)(HWND hWnd);
+	typedef RZRESULT(*UNREGISTEREVENTNOTIFICATION)(void);
+	typedef RZRESULT(*QUERYDEVICE)(RZDEVICEID DeviceId, ChromaSDK::DEVICE_INFO_TYPE& DeviceInfo);
+
+	INIT Init = nullptr;
+	UNINIT UnInit = nullptr;
+	CREATEEFFECT CreateEffect = nullptr;
+	CREATEKEYBOARDEFFECT CreateKeyboardEffect = nullptr;
+	CREATEMOUSEEFFECT CreateMouseEffect = nullptr;
+	CREATEHEADSETEFFECT CreateHeadsetEffect = nullptr;
+	CREATEMOUSEPADEFFECT CreateMousepadEffect = nullptr;
+	CREATEKEYPADEFFECT CreateKeypadEffect = nullptr;
+	SETEFFECT SetEffect = nullptr;
+	DELETEEFFECT DeleteEffect = nullptr;
+	QUERYDEVICE QueryDevice = nullptr;
+	HMODULE m_ChromaSDKModule = NULL;
+
+	Razer(int amount, int wait ) {
+		/*
+		Two parameters are for how many requests should be send to razer sdk.
+		Since the sdk does not seem to register all the commands right after they receive it,
+		it is quite essential for multiple tries to occur.
+
+		Thus, amout means that how many requests should be sent.
+		wait means the delay time between requests.
+		*/
+		request_amount = amount;
+		request_wait = wait;
+
+		bool init_result;
+		init_result = initalize();
+
+
+		if (!init_result) {
+		std::cout << "[CPeripheral] Failed to initialize Razer Chroma SDK" << std::endl;
+		exit(0);
+		}
+
+		std::cout << "[CPeripheral] Successfully initialized Razer Chroma SDK" << std::endl;
+
+		CreateMouseEffect(ChromaSDK::Mouse::CHROMA_NONE, nullptr, nullptr);
+
+
+	}
+
+	void debug_on(void) {
+		debug = true;
+		return;
+	}
+
+	void debug_off(void) {
+		debug = false;
+		return;
+	}
+
+	bool initalize(void){
+		const bool already_called = false;
+
+		if (!already_called) {
+			if (m_ChromaSDKModule == nullptr)
+			{
+				m_ChromaSDKModule = LoadLibrary(CHROMASDKDLL);
+				if (m_ChromaSDKModule == nullptr)
+				{
+					return FALSE;
+				}
+			}
+
+			if (Init == nullptr)
+			{
+				auto Result = RZRESULT_INVALID;
+				Init = reinterpret_cast<INIT>(GetProcAddress(m_ChromaSDKModule, "Init"));
+				if (Init)
+				{
+					Result = Init();
+					if (Result == RZRESULT_SUCCESS)
+					{
+						CreateEffect = reinterpret_cast<CREATEEFFECT>(GetProcAddress(m_ChromaSDKModule, "CreateEffect"));
+						CreateKeyboardEffect = reinterpret_cast<CREATEKEYBOARDEFFECT>(GetProcAddress(m_ChromaSDKModule, "CreateKeyboardEffect"));
+						CreateMouseEffect = reinterpret_cast<CREATEMOUSEEFFECT>(GetProcAddress(m_ChromaSDKModule, "CreateMouseEffect"));
+						CreateHeadsetEffect = reinterpret_cast<CREATEHEADSETEFFECT>(GetProcAddress(m_ChromaSDKModule, "CreateHeadsetEffect"));
+						CreateMousepadEffect = reinterpret_cast<CREATEMOUSEPADEFFECT>(GetProcAddress(m_ChromaSDKModule, "CreateMousepadEffect"));
+						CreateKeypadEffect = reinterpret_cast<CREATEKEYPADEFFECT>(GetProcAddress(m_ChromaSDKModule, "CreateKeypadEffect"));
+						SetEffect = reinterpret_cast<SETEFFECT>(GetProcAddress(m_ChromaSDKModule, "SetEffect"));
+						DeleteEffect = reinterpret_cast<DELETEEFFECT>(GetProcAddress(m_ChromaSDKModule, "DeleteEffect"));
+						QueryDevice = reinterpret_cast<QUERYDEVICE>(GetProcAddress(m_ChromaSDKModule, "QueryDevice"));
+
+						if (CreateEffect &&
+							CreateKeyboardEffect &&
+							CreateMouseEffect &&
+							CreateHeadsetEffect &&
+							CreateMousepadEffect &&
+							CreateKeypadEffect &&
+							SetEffect &&
+							DeleteEffect &&
+							QueryDevice)
+						{
+							return TRUE;
+						}
+						else
+						{
+							return FALSE;
+						}
+					}
+				}
+			}
+
+			return TRUE;
+		}
+
+		else {
+			return TRUE;
+		}
+	}
+
+	void set_mouse_color(unsigned char r, unsigned char g, unsigned char b, ChromaSDK::Mouse::RZLED led_posit){
+		ChromaSDK::Mouse::STATIC_EFFECT_TYPE StaticEffect = {};
+		RZEFFECTID effect_id;
+		RZRESULT result;
+
+		StaticEffect.Color = RGB(r, g, b);
+		StaticEffect.LEDId = led_posit;
+
+		CreateMouseEffect(ChromaSDK::Mouse::CHROMA_STATIC, &StaticEffect, &effect_id);
+		result = (RZRESULT)SetEffect(effect_id);
+
+		if (debug) {
+			if (!(RZRESULT)result) std::cout << "[CPeripheral] Set color " << (int)r << ", " << (int)g << ", " << (int)b << " to Razer Mouse." << std::endl;
+			else std::cout << "[CPeripheral] Failed to set color " << (int)r << ", " << (int)g << ", " << (int)b << " to Razer Mouse." << std::endl;
+		}
+
+		for (int i = 0; i < request_amount; i++) { // Razer devices do not light up at the first time.  you may change this.
+			SetEffect(effect_id);
+			Sleep(request_wait); // Spamming SDK does not seem to work. Setting 1 milisecond delay.
+		}
+
+		return;
+	}
+
+	void set_keyboard_color(unsigned char r, unsigned char g, unsigned char b) {
+		ChromaSDK::Keyboard::STATIC_EFFECT_TYPE StaticEffect = {};
+		RZEFFECTID effect_id;
+		RZRESULT result;
+
+		StaticEffect.Color = RGB(r, g, b);
+
+		CreateKeyboardEffect(ChromaSDK::Keyboard::CHROMA_STATIC, &StaticEffect, &effect_id);
+		result = (RZRESULT)SetEffect(effect_id);
+
+		if (debug) {
+			if (!(RZRESULT)result) std::cout << "[CPeripheral] Set color " << (int)r << ", " << (int)g << ", " << (int)b << " to Razer Keyboard." << std::endl;
+			else std::cout << "[CPeripheral] Failed to set color " << (int)r << ", " << (int)g << ", " << (int)b << " to Razer Keyboard." << std::endl;
+		}
+
+		for (int i = 0; i < request_amount; i++) { // Razer devices do not light up at the first time.  you may change this.
+			SetEffect(effect_id);
+			Sleep(request_wait); // Spamming SDK does not seem to work. Setting 1 milisecond delay.
+		}
+
+		return;
+	}
+
+	void set_headset_color(unsigned char r, unsigned char g, unsigned char b) {
+		ChromaSDK::Headset::STATIC_EFFECT_TYPE StaticEffect = {};
+		RZEFFECTID effect_id;
+		RZRESULT result;
+
+		StaticEffect.Color = RGB(r, g, b);
+
+		CreateHeadsetEffect(ChromaSDK::Headset::CHROMA_STATIC, &StaticEffect, &effect_id);
+		result = (RZRESULT)SetEffect(effect_id);
+
+		if (debug) {
+			if (!(RZRESULT)result) std::cout << "[CPeripheral] Set color " << (int)r << ", " << (int)g << ", " << (int)b << " to Razer Headset." << std::endl;
+			else std::cout << "[CPeripheral] Failed to set color " << (int)r << ", " << (int)g << ", " << (int)b << " to Razer Headset." << std::endl;
+		}
+
+		for (int i = 0; i < request_amount; i++) { // Razer devices do not light up at the first time.  you may change this.
+			SetEffect(effect_id);
+			Sleep(request_wait); // Spamming SDK does not seem to work. Setting 1 milisecond delay.
+		}
+
+		return;
+	}
+
+	void set_mousepad_color(unsigned char r, unsigned char g, unsigned char b) {
+		ChromaSDK::Mousepad::STATIC_EFFECT_TYPE StaticEffect = {};
+		RZEFFECTID effect_id;
+		RZRESULT result;
+
+		StaticEffect.Color = RGB(r, g, b);
+
+		CreateMousepadEffect(ChromaSDK::Mousepad::CHROMA_STATIC, &StaticEffect, &effect_id);
+		result = (RZRESULT)SetEffect(effect_id);
+
+		if (debug) {
+			if (!(RZRESULT)result) std::cout << "[CPeripheral] Set color " << (int)r << ", " << (int)g << ", " << (int)b << " to Razer Mousepad." << std::endl;
+			else std::cout << "[CPeripheral] Failed to set color " << (int)r << ", " << (int)g << ", " << (int)b << " to Razer Mousepad." << std::endl;
+		}
+
+		for (int i = 0; i < request_amount; i++) { // Razer devices do not light up at the first time.  you may change this.
+			SetEffect(effect_id);
+			Sleep(request_wait); // Spamming SDK does not seem to work. Setting 1 milisecond delay.
+		}
+
+		return;
+	}
+
+	void set_keypad_color(unsigned char r, unsigned char g, unsigned char b) {
+		ChromaSDK::Keypad::STATIC_EFFECT_TYPE StaticEffect = {};
+		RZEFFECTID effect_id;
+		RZRESULT result;
+
+		StaticEffect.Color = RGB(r, g, b);
+
+		CreateKeypadEffect(ChromaSDK::Keypad::CHROMA_STATIC, &StaticEffect, &effect_id);
+		result = (RZRESULT)SetEffect(effect_id);
+
+		if (debug) {
+			if (!(RZRESULT)result) std::cout << "[CPeripheral] Set color " << (int)r << ", " << (int)g << ", " << (int)b << " to Razer Keypad." << std::endl;
+			else std::cout << "[CPeripheral] Failed to set color " << (int)r << ", " << (int)g << ", " << (int)b << " to Razer Keypad." << std::endl;
+		}
+
+		for (int i = 0; i < request_amount; i++) { // Razer devices do not light up at the first time.  you may change this.
+			SetEffect(effect_id);
+			Sleep(request_wait); // Spamming SDK does not seem to work. Setting 1 milisecond delay.
+		}
+
+		return;
+	}
+
+	void set_all_color(unsigned char r, unsigned char g, unsigned char b) {
+		if (debug) std::cout << "[CPeripheral] Set color " << (int)r << ", " << (int)g << ", " << (int)b << " to All Razer Devices." << std::endl;
+
+		bool debug_state = debug;
+		debug = false;
+
+		set_mouse_color(r, g, b, ChromaSDK::Mouse::RZLED_ALL);
+		set_keyboard_color(r, g, b);
+		set_mousepad_color(r, g, b);
+		set_headset_color(r, g, b);
+		set_keypad_color(r, g, b);
+
+		debug = debug_state;
+
+		return;
+	}
+};
+
+
